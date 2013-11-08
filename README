@@ -1,0 +1,7 @@
+This project is one I did for a paper and modified it slightly for the General Assembly class on Data Science.
+
+It reads the little files (about 130,000 of them) from the decompressed World of Warcraft Avatar History 
+Dataset and makes them into one big (~3.7gb?) CSV file for analysis. Note there are some errors in the 
+data (like missing guild data on occasion). 
+
+URL for data: http://mmnet.iis.sinica.edu.tw/dl/wowah/
