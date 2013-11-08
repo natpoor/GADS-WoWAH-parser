@@ -1,12 +1,12 @@
-# Sept 27, 2013.
-# This file will (hopefully) read all the little WoW AH files and make a db or csv.
-# One file to unite them all! (It is like 3.5 GB of text or something.... Maybe SQL/SQLite?)
+# Nov, 2013 (orig Sept 2013).
+# This file will (hopefully) read all the little WoW AH files and make a csv.
+# One file to unite them all! (It is like 3.5 GB of text.)
 # Needs to:
 # Read directory and file name structure so I don't have to type it in manually.
 # Make that a data structure of some sort, easy to read so the program can scan through it.
-# Then, using that list, read everything into a file. Questions here (file and data type).
-# Actually, if I can read it, just read the files then.
 # Writes to a CSV.
+
+# Data:  http://mmnet.iis.sinica.edu.tw/dl/wowah/
 
 
 # PACKAGES
@@ -15,25 +15,16 @@ import re
 import os           # This is for os.listdir
 import os.path      # This is for the other dir stuff.
 import string       # Maybe for directory name cycling etc.
-import time
+import time			# For timing how long it takes.
 
 # VARIABLES
-max_char = 0
-max_guild = 0
-mfc = 0
-mdb = []
-#write_data_loc = '/Users/natpoor/Dropbox/WoWAH work/'
-write_data_loc = '/Users/natpoor/Documents/Academic Papers/WoW Avatar Hist DB/'     #iMac only. Don't hit DropBox whilst process.
+max_char = 0		# Tracks char ID for error testing.
+max_guild = 0		# Tracks guild ID for error testing.
+mfc = 0				# Tracks how many little files were counted.
+write_data_loc = '~/Documents/'       	     						# Adjust to your dir as needed.
 write_data_file = 'wowah_data.csv'
 write_data_filename = write_data_loc + write_data_file
-main_folder_str = 'WoWAH/'
-mfs = main_folder_str
-imac = '/Users/natpoor/Documents/Academic Papers/WoW Avatar Hist DB/'   # Since currently it's local.
-airbook = '/Users/natpoor/Documents/WoWAH folder/'
-
-# LOCATION DIRS! Change as needed.
-location_dir = airbook                  # Just set this one, everything falls into place.
-the_dir = location_dir + mfs
+the_dir = '~/Documents/'								# This is where the WoWAH folders are located, adjust as needed. Have them in their own subdir.
 
 #REGEX
 line_re = re.compile(r'^.*"[\d+],\s(.*),\s(\d+),(\d+),\s?(\d*),.*".*$')
@@ -49,22 +40,13 @@ line_re = re.compile(r'^.*"[\d+],\s(.*),\s(\d+),(\d+),\s?(\d*),.*".*$')
 # dummy, query time, query sequence number, avatar ID, guild, level, race, class, zone, dummy, dummy
 
 
-# TESTING REGEX HERE
-test1 = '[1] = "0, 03/30/06 23:59:49, 1,10772, , 1, Orc, Warrior, Orgrimmar, , 0",'
-test2 = '"0, 01/10/09 00:03:50, 1,55517, , 3, Orc, Warlock, Orgrimmar, WARLOCK, 0", -- [1]'
-test3 = '[1] = "0, 03/30/06 23:59:49, 1,10772,17, 1, Orc, Warrior, Orgrimmar, , 0",'
-test4 = '"0, 01/10/09 00:03:50, 1,55517,18, 3, Orc, Warlock, Orgrimmar, WARLOCK, 0", -- [1]'
-
-test_list = [test1, test2, test3, test4]
-
-
 
 # FUNCTIONS
 
 def get_subdirs(the_folder):
     this_list = []
     this_list = os.listdir(the_folder)
-    print 'From get_subdirs, a list is: ', this_list
+    print 'From get_subdirs, a list is: ', this_list      # Printing for error control.
     for item in this_list:
         if item.startswith('.'):
             this_list.remove(item)
@@ -73,7 +55,7 @@ def get_subdirs(the_folder):
 # '.DS_Store'
 
 
-def get_file_list(the_folder):
+def get_file_list(the_folder):				# Yes these two are the same, just diff names.
     this_list = []
     this_list = os.listdir(the_folder)
     for item in this_list:
@@ -93,8 +75,8 @@ def parse_and_write(file, output_file):
             if data.group(4) is not(''):
                 guild = data.group(4)
             else:
-                guild = '-1'
-            print timestamp
+                guild = '-1'   # Note there are some missing values, i.e. errant -1.
+            print timestamp    # This is so you can keep track of where it is. Max Jan 2009 IIRC.
 
             new_line = char + ',' + guild + ',' + timestamp + '\n'
             output_file.write(new_line)
@@ -103,16 +85,15 @@ def parse_and_write(file, output_file):
             print "Didn't match the regex."
 
 # End of parse_and_write
+# Note the two diff formats they use in the files, it changes partway through:
 # [1] = "0, 03/30/06 23:59:49, 1,10772, , 1, Orc, Warrior, Orgrimmar, , 0",
 #       "0, 01/10/09 00:03:50, 1,55517, , 3, Orc, Warlock, Orgrimmar, WARLOCK, 0", -- [1]
 # dummy, query time, query sequence number, avatar ID, guild, level, race, class, zone, dummy, dummy
-# Hypotheses: 1. Most guilds are small (long tail); 2. Most guilds die;
-# RQ: 1. Explore guild membership churn; 
 
 
 def read_tree(output_file):
     global the_dir
-    months_folders = get_subdirs(the_dir)
+    months_folders = get_subdirs(the_dir)		# This is why the subdirs should be in their own location that you set in the vars section up top.
     for folder in months_folders:                                   # Run isdir(dir) first, try/except. Make sure no funny folders/dirs.
         folder = the_dir + folder                                   # Expands the folder name to the long version.
         day_folders = get_subdirs(folder)
@@ -130,34 +111,6 @@ def read_tree(output_file):
 # End of read_tree
 
 
-
-def write_data(): # Deprecated.
-    global mdb
-    fieldnames = ['char', 'guild', 'timestamp']
-    
-    with open(write_data_filename, 'w') as csvfile:
-        the_file = csv.writer(csvfile)
-        the_file.writerow(fieldnames)
-        for line in mdb:
-            the_file.writerow(line)
-    
-    print 'Wrote to: ', write_data_filename
-
-# End of write_data
-
-
-def Xmain():                         # Yeah the regex is fine!
-	for test_item in test_list:
-		print test_item
-		results = line_re.match(test_item)
-		if results is not(None):
-			print 'Char: ' + results.group(3) + ' and Guild: ' + results.group(4)
-		else:
-			print 'What no match??? On ' + test_string
-
-# End of this main
-
-
 def main():	
     #open write file here
     output_file = open(write_data_filename, 'a')    # 'a' is very important, it appends the new data to the big file. 
@@ -170,10 +123,10 @@ def main():
     spent_time = time.time() - start_time
     mins_spent = int(spent_time / 60)
     secs_remainder = int(spent_time % 60)
-    print 'Time of process: ', mins_spent, ':', secs_remainder     # 13:42 on iMac. Also 14:39 another time.
+    print 'Time of process: ', mins_spent, ':', secs_remainder     # 13m:42s on iMac. Also 14m:39s another time.
     
 #    print 'Files scanned (or tried), ', mfc     # 138,084
-#    print 'Max Chars: ', max_char               # They claim 91,065 ">= 1" NOT it starts at 0, my count says: 91064 + 1 = 91,065.
+#    print 'Max Chars: ', max_char               # They say 91,065 ">= 1" but it starts at 0, my count says: 91064 + 1 = 91,065.
 #    print 'Max Guilds: ', max_guild             # They say "An integer within [1, 513]" but no since they start at 0. 512 + 1 = 513.
 # End of main
 
